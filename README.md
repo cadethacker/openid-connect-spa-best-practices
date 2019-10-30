@@ -2,7 +2,11 @@
 
 *__Soooooo this is awkward.... but I've been giving out bad advice about where and how to store OAuth2 tokens on the client side__* hahaha  
 
-So one thing I have learned in this nearly 2 year journey through OAuth2/OpenID Connect is that it is _artisanal_   and there are TONS of opinions, and sometimes it is very difficult to find good advice. Also I generally ignore any pages from prior to 2017/2018.  When you do a google search, the first 4 links will say different things.   So as of Oct 2019, here is the world as I know it.  If you are doing something different, it is doesn't mean it is bad, there are 1,000 ways todo all of this. 
+So one thing I have learned in a nearly 2 year journey of using OAuth2/OpenID Connect at enterprise scale is that
+
+> .....it is _artisanal_   
+
+When searching google, there are TONS of opinions. It is very difficult to find solid, consistent advice. Also I generally ignore any pages from prior to 2017/2018.  When searching, the first 4 links will say different things.   So as of Oct 2019, here is the world as I know it.  If you are doing something different, it is doesn't mean it is bad, there are 1,000 ways todo all of this, but here is my currated knowlege.  Hopefully it helps somebody.  If so, give this a star above :D 
 
 ### New to this whole OAuth2/OpenID Connect thingy?  
 
@@ -16,12 +20,17 @@ If you are just getting started, here is an outstanding video services from Orac
 
 Lexicon is important, and one of the ways I see so many OpenID Connect/OAuth2 articles go sideways is they don't define the terms and so who exactly is the "client" gets squishy.  So in an effort to remove "squish" here is what I believe:
 
-* Client -  The browser.  I guess this could also be a Mobile Browser shell around the web app (PhoneGap/Cordova), but I'll let you figure that out. 
+* Client -  The browser. Period.
 
 * Resource Service - Your trusted backend.  I'm making an assumption that your front end only (mostly) talks to your backend, and your backend in turn makes downstream requests on its behalf. 
 
 * access_token - a token representing a user. It is intended to be used by a downstream (backend) service.  It can be opaque or a jwt.  I've seen both.  You should treat it opaque, but if it is a jwt, make sure to check the expiration time. 
-* id_token - by standard, it is a jwt. 
+
+* id_token - by standard, it is a jwt. (Yeah!) 
+
+* auth_code - a 1 time use token to retrieve the access_token and the id_token. 
+
+* refresh_token - a long time use token that you store on the server to get a new access token on demand.  I recommend you throw it in the trash when you get it back.  Remember I build enterprise apps.  Logging in daily is normal and to be honest, expected.  
 
 
 ### Best Practices
@@ -30,21 +39,28 @@ Lexicon is important, and one of the ways I see so many OpenID Connect/OAuth2 ar
 
 When building a SPA that has a trusted backend. (which most of us are). 
 
-1. __Which Grant Type should I use?__ Use the Auth Code Grant and not the  Implicit Grant.  If you are using the Implicit Grant, that is fine, but make sure you follow all best practices.  It is easy to get wrong. Which is part of the problem.  
+1. __Which Grant Type should I use?__ Use the Auth Code Grant and not the  Implicit Grant.  If you are using the Implicit Grant, you should make plans to remediate.  See Further Reading below. The Implicit Grant is easy to get wrong. Which is part of the problem.  
 
 
-2. *How to get the token from the server to the browser?* If using the Auth Code Grant, then you need to return the tokens to the browser from the backend.  Use Set Cookie for that, not fragment. (again this is not a hard line, just what i'm reading as best practice, and easiest)  
+2. __Post Auth Code flow... How to get the token from the server to the browser?__ If using the Auth Code Grant, then you need to return the tokens to the browser from the backend.  Use Set Cookie for that, not fragment. 
 
 * The cookie should have the full path of your domain of your app. 
 * The access_token should have the HttpOnly (suggestion)
 * The id_token should be available to your javascript code.(so don’t set HttpOnly)
-* Neither should have a date, so that they close when the browser closes. 
-* You can be fancy and delete the cookie when the tab closes, up to you. 
+* Neither should have a date, so that they expire when the browser closes. 
 
-3. Once your javascript code kicks in, you can pull the token from the cookie and move it to memory, then delete the cookie, up to you. If you are going to pull the tokens immediately and delete them, then don’t worry about setting the HttpOnly flag. 
+3. __Where do I store the token once my javascript code reactivates after the auth flow?__
 
-4. Verify (Always) and Validate (sometimes) the tokens when it makes sense. 
+Once your javascript code kicks in, one option is to pull the token from the cookies and move it to memory, then delete the cookie, up to you. If you are going to pull the tokens immediately and delete them, then don’t worry about setting the HttpOnly flag. This is not a bad plan because It makes you are hard target for XSS or CSER attacks because the token is not where attackers expect it. 
 
+*DO NOT* store the tokens in Local or Session Storage.  Those should be treated as open cache and not security.  Those storage options are open to *all* javascript.  Go count the number of javascript libraries you import.  Do you trust all of them?  Probably not. 
+
+If you do keep the tokens a cookies, then make sure to protect youself against CSFR attacks. 
+
+
+4. __What do I do with the tokens once I have them?__ 
+
+1. Use a good client side JS library to open the JWT.  This https://github.com/auth0/jwt-decode good one.  It will open the JWT for you, and does very light validation. 
 Use the id_token for verifying information about the human logged into your app, not the access_token. 
 
 
@@ -53,12 +69,14 @@ Use the id_token for verifying information about the human logged into your app,
 
 Here are some great links I have currated:
 
-https://tools.ietf.org/html/rfc6749
+[1] https://tools.ietf.org/html/rfc6749
 
-https://openid.net/connect/
+[2] https://openid.net/connect/
 
-https://auth0.com/docs/security/store-tokens#single-page-apps
+[3] https://medium.com/@robert.broeckelmann/when-to-use-which-oauth2-grants-and-oidc-flows-ec6a5c00d864
 
-https://blog.dareboost.com/en/2019/03/secure-cookies-secure-httponly-flags/
+[4] https://auth0.com/docs/security/store-tokens#single-page-apps
+
+[5] https://blog.dareboost.com/en/2019/03/secure-cookies-secure-httponly-flags/
 
 https://medium.com/oauth-2/why-you-should-stop-using-the-oauth-implicit-grant-2436ced1c926
