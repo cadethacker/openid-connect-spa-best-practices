@@ -10,9 +10,9 @@ When searching google, there are TONS of opinions. It is very difficult to find 
 
 ### New to this whole OAuth2/OpenID Connect thingy?  
 
-Check the Further Reading at the bottom.  There are tons of good resources for begininers, but this is a journey not a simple library you pull down and plug and run.  Security is a daily effort, not 1 feature in the backlog. Become a student of this, I promise it will pay off. 
+Check the Further Reading at the bottom.  There are tons of good resources for begininers, but this is a journey and not a simple library you pull down and plug and run.  Security is a daily effort, not 1 feature in the backlog. Become a student of this, I promise it will pay off. 
 
-If you are just getting started, here is an outstanding video services from Oracle, focus on videos 4-10. 
+If you are just getting started with OAuth2 and OpenID Connect, here is an outstanding video services from Oracle, focus on videos 4-10. 
 
 [Oracle Learning Library - Cloud Standards - Security](https://www.youtube.com/playlist?list=PLKCk3OyNwIzuD_jxWu-JddooM2yjX5q99)
 
@@ -24,9 +24,9 @@ Lexicon is important, and one of the ways I see so many OpenID Connect/OAuth2 ar
 
 * Resource Service - Your trusted backend.  I'm making an assumption that your front end only (mostly) talks to your backend, and your backend in turn makes downstream requests on its behalf. 
 
-* access_token - a token representing a user authorization. It is intended to be used by a downstream (backend) service.  It can be opaque or a jwt.  I've seen both.  If it is a jwt, make sure to check the expiration time. 
+* access_token - a token representing a user authorization.  It can be opaque or a jwt.  I've seen both.  The access_token is used for authorizing a call to a resource service. 
 
-* id_token - by standard, it is a jwt. (Yeah!) This is a jwt that should contain all of the users public data like first name, last name, scopes, email, etc. 
+* id_token - by standard, it is a jwt. (Yeah!) This is a jwt that should contain all of the user's public data: first name, last name, scopes, email, etc. 
 
 * auth_code - a 1 time use token to retrieve the access_token and the id_token. 
 
@@ -41,22 +41,38 @@ When building a SPA that has a trusted backend. (which most of us are).
 
 1. __Which Grant Type should I use?__ Use the Auth Code Grant and not the  Implicit Grant. Ask for the openid scope so you get an id_token.  If you are using the Implicit Grant, you should make plans to remediate.  See Further Reading below. The Implicit Grant is easy to get wrong. Which is part of the problem.  
 
+2. __Should I use Sessions?__ This is a key questions and requires careful thought. Regardless of using sessions or not, the id_token goes to the browser. So this really impacts the access_token and refresh_token. 
 
-2. __Post Auth Code flow... How to get the token from the server to the browser?__ If using the Auth Code Grant, then you need to return the tokens to the browser from the backend.  Use Set Cookie for that, not fragment. 
+Option 1: Use Session - If you do this, the id_token goes to the browser, and the id_token, access_token and refresh_token go into the session. 
 
-* The cookie should have the full path of your domain of your app. 
-* The access_token should have the HttpOnly (suggestion)
-* The id_token should be available to your javascript code.(so don’t set HttpOnly)
+PRO: This is probably the most secure stance for the access_token and refresh_token. There are many good sessions libraries that have been hardened and battle tested. 
+
+CON: If you scale the backend beyond 1 instance, you have to take a hard look at proper session backing cache like redis or a database. This adds operational complexity to your app stack. 
+
+Option 2: Do not use Session - If you do this, the id_token and access_token go to the browser, and the refresh_token gets dropped and ignored. This should *NEVER* to to the browser, ever ever ever. :D 
+
+PRO: This is simpler app setup and doesn't require a persistant session backing database. 
+
+CON: You loose your refresh_token and have have to have proper security posture for holding the access_token in the browser. 
+
+2. __Post Auth Code flow... How to get the tokens from the server to the browser?__ If using the Auth Code Grant, then you need to return the tokens from the trusted backend to the browser. 
+
+If using sessions, you need to return the id_token.  If not using sessions, then you need to return both id_token and access_token.  
+
+The easiest way is to use Set-Cookie for that, not fragment. Don't get attached to the cookie, once it gets to the browser, you could pull the value from the cookie and delete the cookie, more on that in a moment. 
+
+To be safe: 
+
+* The cookie should have the __FULL PATH__ of your application domain. 
 * Neither should have a date, so that they expire when the browser closes. 
 
 3. __Where do I store the token once my javascript code reactivates after the auth flow finishes?__
 
-Once your javascript code kicks back in post auth flow, one option is to pull the token from the cookies and move it to memory, then delete the cookie, up to you. If you are going to pull the tokens immediately and delete them, then don’t worry about setting the HttpOnly flag. This is not a bad plan because It makes you are hard target for XSS or CSER attacks because the token is not where attackers expect it.  (feel free to tell me otherwise)
+Once your javascript code kicks back in post auth flow, the safest option is to pull the token(s) from the cookie(s) and move it to the application memory, then delete the cookie(s). 
 
-*DO NOT* store the tokens in Local or Session Storage.  Those should be treated as open cache and not security.  Those storage options are open to *all* javascript.  Go count the number of external javascript libraries you import.  Do you trust all of them?  Probably not. 
+*DO NOT* store the tokens in Web (Local or Session) Storage.  Those should be treated as open cache and not security.  Those storage options are open to *all* javascript loaded in your app.  Go count the number of external javascript libraries you import.  Do you trust all of them?  Probably not. 
 
-If you do keep the tokens a cookies, then make sure to protect youself against CSFR attacks. 
-
+PRO: By moving the id_token (and maybe access_token as well) into memory, are become a hard target for XSS or CSER attacks because the token is not where attackers expect it.  
 
 4. __What do I do with the tokens once I have them?__ 
 
