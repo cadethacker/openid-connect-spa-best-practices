@@ -72,19 +72,19 @@ Once your javascript code kicks back in post auth flow, the safest option is to 
 
 *DO NOT* store the tokens in Web (Local or Session) Storage.  Those should be treated as open cache and not security.  Those storage options are open to *all* javascript loaded in your app.  Go count the number of external javascript libraries you import.  Do you trust all of them?  Probably not. 
 
-PRO: By moving the id_token (and maybe access_token as well) into memory, are become a hard target for XSS or CSER attacks because the token is not where attackers expect it.  
+PRO: By moving the id_token (and maybe access_token as well) into memory, are become a hard target for XSS or CSRF attacks because the token is not where attackers expect it.  
 
 4. __What do I do with the tokens once I have them?__ 
 
-1. Use a good client side JS library to open the JWT.  This https://github.com/auth0/jwt-decode good one.  It will open the JWT for you, and does very light validation. 
+* Use a good client side JS library to open the JWT.  But you can also unpack it yourself. It is just base64. Best to find one that does some light validation and checks if it was manipulated or expired. 
 
-2. Use the id_token for verifying information about the human logged into your app, not the access_token. You can verify if it is modifed, so great for maininting authorizations inside the browser without making a round trip. 
+* Use the id_token for verifying information about the human logged into your app, not the access_token. You can verify if it is modifed, so great for maininting authorizations inside the browser without making a round trip. 
 
-My personal opinion (and could easily be argued different ways) is that OpenID Connect Level 1 is to set the id_token and access_token for a work day (8 hours) and throw away the refresh token.  But if you set the id_token/access_token for shorter period of time (say 15 minutes) then you will need to store the refresh token (which should be set for 8 hours) on the server session so your user can refresh their token on demand.  That is a OpenID Connect Level 2 topic.  Start with Level 1 and work up to Level 2. 
+* If you are not session, then keep an eye on if the id_token has expired. 
 
 5. __How do I make authorized calls to my backend?__ 
 
-First point, once the id_token gets to your browser, it should stay there. This is for your javasript code, and should not be passed around. If you want to validate it, then write a quick endpoint on your backend and pass it back to validate it, but other than that call, the id_token stays put. 
+Once the id_token gets to your browser, it should stay there. This is for your javasript code, and should not be passed around. If you want to validate it, then write a quick endpoint on your backend and pass it back to validate it, but other than that call, the id_token stays put. 
 
 For the access_token you have two options:
 
