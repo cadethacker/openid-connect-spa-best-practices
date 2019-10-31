@@ -108,14 +108,16 @@ For the access_token you have two options:
 
 Here are some great links I have currated:
 
-[1] https://tools.ietf.org/html/rfc6749
+https://martinfowler.com/articles/web-security-basics.html
 
-[2] https://openid.net/connect/
+https://tools.ietf.org/html/rfc6749
 
-[3] https://medium.com/@robert.broeckelmann/when-to-use-which-oauth2-grants-and-oidc-flows-ec6a5c00d864
+https://openid.net/connect/
 
-[4] https://auth0.com/docs/security/store-tokens#single-page-apps
+https://medium.com/@robert.broeckelmann/when-to-use-which-oauth2-grants-and-oidc-flows-ec6a5c00d864
 
-[5] https://blog.dareboost.com/en/2019/03/secure-cookies-secure-httponly-flags/
+https://auth0.com/docs/security/store-tokens#single-page-apps
+
+https://blog.dareboost.com/en/2019/03/secure-cookies-secure-httponly-flags/
 
 https://medium.com/oauth-2/why-you-should-stop-using-the-oauth-implicit-grant-2436ced1c926
