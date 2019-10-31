@@ -1,5 +1,16 @@
 # OpenID Connect Best Practices for SPA with Trusted Backend
 
+
+## TL;DR
+
+* Use Auth Code Grant with OpenID Scope. 
+
+* BEST: Use Session. Find a battle hardened and tested server side session setup and put id_token, access_token, and refresh_token into the session. Return the id_token to the browser and store in memory (not Local Storage, Session Storage, or Cookies)
+
+* GOOD: Return id_token and access_token to the browser, and store in memory (not Local Storage, Session Storage, or Cookies), throw away the refresh_token. 
+
+## Still Reading...
+
 *__Soooooo this is awkward.... but I've been giving out bad advice about where and how to store OAuth2/OpenID tokens on the client side__* hahaha  
 
 So one thing I have learned in a nearly 2 year journey of using OAuth2/OpenID Connect at enterprise scale is that
